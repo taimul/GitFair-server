@@ -25,8 +25,6 @@ const { Configuration, OpenAIApi } = require("openai");
 
 
 
-
-
 async function run() {
 
 
@@ -43,26 +41,31 @@ async function run() {
 
         //sofia start-----------
 
-        // chatGPT openAI function ---
+
+        // CHATGPT_OPENAI function --- 
         app.post("/searchai", async (req, res) => {
-            const prompt = req?.body?.prompt;
+            const prompt = req.body.prompt;
+
+            // console.log({ prompt })
+            // text-davinchi-003 --- ( open ai api- )
             const configuration = new Configuration({
                 apiKey: process.env.CHATGPT_OPENAI_API_KEY,
-            })
-            const openai = new OpenAIApi(configuration);
-            const response = await openai.createCompletion({
+            });
+            const openAI = new OpenAIApi(configuration);
+            const response = await openAI.createCompletion({
                 model: "text-davinci-003",
                 prompt: `${prompt}`,
+                temperature: 0,
                 max_tokens: 3000,
                 top_p: 1,
                 frequency_penalty: 0.5,
                 presence_penalty: 0,
             })
-            console.log(response?.data?.choices[0]?.text);
+            // console.log({ ans: response.data.choices[0].text });
+
             res.status(200).send({
-                success: true,
-                bot: response?.data?.choices[0]?.text,
-            })
+                bot: response.data.choices[0].text
+            });
         })
 
         //sofia end------------
