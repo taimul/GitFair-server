@@ -1,17 +1,29 @@
 const express = require('express');
 const cors = require('cors');
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const port = process.env.PORT || 5000;
 require("dotenv").config();
 require("colors");
 
 
-
+// mongoDB initialized ---
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 //middle wares
 app.use(cors());
 app.use(express.json());
+
+
+
+// chat-gpt open AI initialized---
+const { Configuration, OpenAIApi } = require("openai");
+const configuration = new Configuration({
+    apiKey: process.env.CHATGPT_OPENAI_API_KEY,
+})
+
+
+
+
 
 
 
