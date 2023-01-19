@@ -17,9 +17,6 @@ app.use(express.json());
 
 // chat-gpt open AI initialized---
 const { Configuration, OpenAIApi } = require("openai");
-const configuration = new Configuration({
-    apiKey: process.env.CHATGPT_OPENAI_API_KEY,
-})
 
 
 
@@ -46,6 +43,27 @@ async function run() {
 
         //sofia start-----------
 
+        // chatGPT openAI function ---
+        app.post("/searchai", async (req, res) => {
+            const prompt = req?.body?.prompt;
+            const configuration = new Configuration({
+                apiKey: process.env.CHATGPT_OPENAI_API_KEY,
+            })
+            const openai = new OpenAIApi(configuration);
+            const response = await openai.createCompletion({
+                model: "text-davinci-003",
+                prompt: `${prompt}`,
+                max_tokens: 3000,
+                top_p: 1,
+                frequency_penalty: 0.5,
+                presence_penalty: 0,
+            })
+            console.log(response?.data?.choices[0]?.text);
+            res.status(200).send({
+                success: true,
+                bot: response?.data?.choices[0]?.text,
+            })
+        })
 
         //sofia end------------
 
