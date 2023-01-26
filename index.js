@@ -1,9 +1,11 @@
 const express = require('express');
 const cors = require('cors');
 const app = express();
-const port = process.env.PORT || 5000;
 require("dotenv").config();
 require("colors");
+const port = process.env.PORT || 5000;
+const ACTIONS = require('./Actions');
+
 
 
 // mongoDB initialized ---
@@ -14,9 +16,83 @@ app.use(cors());
 app.use(express.json());
 
 
+// ----------------- socket start
+const { Server } = require("socket.io");
+const http = require("http")
+const server = http.createServer(app);
+const io = new Server(server);
+
+
+const userSocketMap = {}; // socketId : usrName (storing users data)
+function getAllConnectedClients(roomId) {
+
+    // server from whos room id is geeted --- 
+    // io.sockets.adapter.rooms.get(roomId) = map (returns a map )
+    // console.log(Array.from('foo'));
+    // Expected output: Array ["f", "o", "o"]
+    return Array.from(io.sockets.adapter.rooms.get(roomId) || []).map((socketId) => {
+        return {
+            socketId,
+            userName: userSocketMap[socketId],
+        }
+    });
+}
+
+//  socket.io function --- 
+io.on("connection", (socket) => {
+    console.log("connection success of socket.io", socket.id);
+
+    // when user/client join this junction will be trigger from the front end ---
+    socket.on(ACTIONS.JOIN, ({ roomId, userName }) => {
+
+
+        // console.log("hello", roomId, userName);
+
+        // store userName on this -- 
+        userSocketMap[socket.id] = userName;
+        // client join  under the line of function ---
+
+        // room id generated and same name(roomId) room is created on frontEnd ---
+        socket.join(roomId);
+
+        // connected clients lish --- 
+        const clients = getAllConnectedClients(roomId);
+        // console.log(clients)
+        clients.forEach(({ socketId }) => {
+            // NOTIFY client if someone joined -- 
+            io.to(socketId).emit(ACTIONS.JOINED, {
+                clients,
+                userName,
+                socketId: socket.id,
+            })
+        })
+
+        // DISCONNECT OR SERVER CLOSED --- 
+        socket.on("disconnecting", () => {
+            // [... socket.rooms] = Array.from(socket.rooms)= ame work -- 
+            const rooms = [...socket.rooms];
+            rooms.forEach((roomId) => {
+                socket.in(roomId).emit(ACTIONS.DISCONNECTED, {
+                    userName,
+                    socketId: socket.id,
+                })
+            });
+            // delete user from userLIST---
+            delete userSocketMap[socket.id]
+
+            // leave ROOM OFFICIALLY methods-- -
+            socket.leave();
+        })
+    })
+})
+
+// ----------------- socket stop
+
+
 
 // chat-gpt open AI initialized---
 const { Configuration, OpenAIApi } = require("openai");
+
 
 
 
@@ -121,6 +197,15 @@ app.get('/', (req, res) => {
     res.send('GitFair server is up and running');
 })
 
-app.listen(port, () => {
+// app.listen(port, () => {
+//     console.log(`server is ruuning at port ${port}`.bgCyan)
+// })
+
+// // socket.io server listen -------- 
+// server.listen(5001, () => {
+//     console.log(`socket.io server is runing on  5001`.bgWhite)
+// });
+
+server.listen(port, () => {
     console.log(`server is ruuning at port ${port}`.bgCyan)
 })
