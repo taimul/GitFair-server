@@ -7,13 +7,22 @@ const port = process.env.PORT || 5000;
 const ACTIONS = require('./Actions');
 
 
-
 // mongoDB initialized ---
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+
+
+// chat-gpt open AI initialized---
+const { Configuration, OpenAIApi } = require("openai");
+const { CODE_CHANGE } = require('./Actions');
+
 
 //middle wares
 app.use(cors());
 app.use(express.json());
+
+
+
+
 
 
 // ----------------- socket start
@@ -106,34 +115,14 @@ io.on("connection", (socket) => {
 
 
 
-// chat-gpt open AI initialized---
-const { Configuration, OpenAIApi } = require("openai");
-const { CODE_CHANGE } = require('./Actions');
-
-
-
-
-
-
-
-
 
 async function run() {
-
-
-
-
-
-
-
-
 
 
     try {
 
 
         //sofia start-----------
-
 
         // CHATGPT_OPENAI function --- 
         app.post("/searchai", async (req, res) => {
