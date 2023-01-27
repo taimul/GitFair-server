@@ -78,6 +78,11 @@ io.on("connection", (socket) => {
             socket.in(roomId).emit(ACTIONS.CODE_CHANGE, { code });
         })
 
+        // get code SYNC ------ 
+        socket.on(ACTIONS.SYNC_CODE, ({ socketId, code }) => {
+            io.to(socketId).emit(ACTIONS.CODE_CHANGE, { code });
+        })
+
 
         // DISCONNECT OR SERVER CLOSED --- 
         socket.on("disconnecting", () => {
