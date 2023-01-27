@@ -58,6 +58,8 @@ io.on("connection", (socket) => {
         // connected clients lish --- 
         const clients = getAllConnectedClients(roomId);
         // console.log(clients)
+
+        // clients joined functions ---------
         clients.forEach(({ socketId }) => {
             // NOTIFY client if someone joined -- 
             io.to(socketId).emit(ACTIONS.JOINED, {
@@ -65,6 +67,11 @@ io.on("connection", (socket) => {
                 userName,
                 socketId: socket.id,
             })
+        });
+
+        // get code from code edtiro from the clients side ------ 
+        socket.on(ACTIONS.CODE_CHANGE, ({ roomId, code }) => {
+            io.to(roomId).emit(ACTIONS.CODE_CHANGE, { code });
         })
 
         // DISCONNECT OR SERVER CLOSED --- 
@@ -79,7 +86,6 @@ io.on("connection", (socket) => {
             });
             // delete user from userLIST---
             delete userSocketMap[socket.id]
-
             // leave ROOM OFFICIALLY methods-- -
             socket.leave();
         })
@@ -92,6 +98,7 @@ io.on("connection", (socket) => {
 
 // chat-gpt open AI initialized---
 const { Configuration, OpenAIApi } = require("openai");
+const { CODE_CHANGE } = require('./Actions');
 
 
 
