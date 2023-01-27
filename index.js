@@ -46,8 +46,6 @@ io.on("connection", (socket) => {
     socket.on(ACTIONS.JOIN, ({ roomId, userName }) => {
 
 
-        // console.log("hello", roomId, userName);
-
         // store userName on this -- 
         userSocketMap[socket.id] = userName;
         // client join  under the line of function ---
@@ -59,6 +57,7 @@ io.on("connection", (socket) => {
         const clients = getAllConnectedClients(roomId);
         // console.log(clients)
 
+
         // clients joined functions ---------
         clients.forEach(({ socketId }) => {
             // NOTIFY client if someone joined -- 
@@ -69,10 +68,16 @@ io.on("connection", (socket) => {
             })
         });
 
+
         // get code from code edtiro from the clients side ------ 
         socket.on(ACTIONS.CODE_CHANGE, ({ roomId, code }) => {
-            io.to(roomId).emit(ACTIONS.CODE_CHANGE, { code });
+            // send code to all include me (who type )
+            // console.log({ roomId, code });
+            // io.to(roomId).emit(ACTIONS.CODE_CHANGE, { code });
+            // send codeWwho type this --- 
+            socket.in(roomId).emit(ACTIONS.CODE_CHANGE, { code });
         })
+
 
         // DISCONNECT OR SERVER CLOSED --- 
         socket.on("disconnecting", () => {
