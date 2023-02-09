@@ -1,19 +1,15 @@
 const express = require('express');
 const cors = require('cors');
-const app = express();
+const http = require('http');
 require("dotenv").config();
 require("colors");
 const port = process.env.PORT || 5000;
 const ACTIONS = require('./Actions');
+const socketio = require('socket.io');
 
-
-// mongoDB initialized ---
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-
-
-// chat-gpt open AI initialized---
-const { Configuration, OpenAIApi } = require("openai");
-const { CODE_CHANGE } = require('./Actions');
+const app = express();
+const server = http.createServer(app);
+const io = socketio(server);
 
 
 //middle wares
@@ -22,16 +18,23 @@ app.use(express.json());
 
 
 
+// mongoDB initialized ---
+// const uri = "mongodb+srv://git-fair-sofi-5:wGIkgVOp2DOT4e2R@cluster0.wzbzlyu.mongodb.net/?retryWrites=true&w=majority";
+
+const { MongoClient, ServerApiVersion } = require('mongodb');
+// const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.zwgt8km.mongodb.net/?retryWrites=true&w=majority`;
+const uri = "mongodb+srv://git-fair-sofi-5:wGIkgVOp2DOT4e2R@cluster0.zwgt8km.mongodb.net/?retryWrites=true&w=majority";
+const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
+
+
+// STRIPE --- 
+const stripe = require("stripe")(process.env.STRIPT_SECRET);
 
 
 
-// ----------------- socket start
-const { Server } = require("socket.io");
-const http = require("http")
-const server = http.createServer(app);
-const io = new Server(server);
+//sofia start-----------
 
-
+// socket function start ---- 
 const userSocketMap = {}; // socketId : usrName (storing users data)
 function getAllConnectedClients(roomId) {
 
@@ -47,9 +50,10 @@ function getAllConnectedClients(roomId) {
     });
 }
 
-//  socket.io function --- 
+// //  socket.io function --- 
+
 io.on("connection", (socket) => {
-    console.log("connection success of socket.io", socket.id);
+    // console.log("connection success of socket.io", socket.id);
 
     // when user/client join this junction will be trigger from the front end ---
     socket.on(ACTIONS.JOIN, ({ roomId, userName }) => {
@@ -93,7 +97,7 @@ io.on("connection", (socket) => {
         })
 
 
-        // DISCONNECT OR SERVER CLOSED --- 
+        //         // DISCONNECT OR SERVER CLOSED --- 
         socket.on("disconnecting", () => {
             // [... socket.rooms] = Array.from(socket.rooms)= ame work -- 
             const rooms = [...socket.rooms];
@@ -111,18 +115,75 @@ io.on("connection", (socket) => {
     })
 })
 
-// ----------------- socket stop
+// ----------------- socket function stop
 
 
-
+// sofi start  -------
 
 async function run() {
-
 
     try {
 
 
-        //sofia start-----------
+
+        // MONGODB COLLECTIONS ---- 
+        const database = client.db("gitfair-server");
+        const usersCollection = database.collection("users");
+
+        // MongoDB DataBase connected --- 
+
+        // stripe payments --- 
+        app.post("/create-payment-intent", async (req, res) => {
+            const { price } = req.body;
+            const priceAmount = price * 100;
+            // console.log({ priceAmount })
+            const paymentIntent = await stripe.paymentIntents.create({
+                currency: "usd",
+                amount: priceAmount,
+                "payment_method_types": [
+                    "card"
+                ]
+            });
+            res.status(200).send({
+                clientSecret: paymentIntent.client_secret,
+            })
+        });
+
+        // payment successuser store on DATABASE --- 
+        app.post("/premiumuser", async (req, res) => {
+            const payConfirmUserDb = req.body;
+            // console.log(payConfirmUserDb);
+            const result = await usersCollection.insertOne(payConfirmUserDb);
+            res.status(200).send({
+                success: true,
+                message: `Successfully create the user ${payConfirmUserDb.email}`,
+                data: result,
+            })
+        });
+
+        // (chect user is premium or not premium / normal user)  || get premium user from database--- 
+        app.post("/premiumuserfromdb", async (req, res) => {
+            const { email } = req.body;
+            // console.log("where is email", email) //
+            const query = {
+                email,
+            }
+            // console.log(payConfirmUserDb);
+            const result = await usersCollection.findOne(query);
+            if (result) {
+                res.status(200).send({
+                    success: true,
+                    message: `Successfully create the user ${email}`,
+                    data: result,
+                })
+            } else {
+                res.status(200).send({
+                    success: false,
+                    message: `This user is not a premium member`,
+                })
+            }
+
+        });
 
         // CHATGPT_OPENAI function --- 
         app.post("/searchai", async (req, res) => {
@@ -144,74 +205,32 @@ async function run() {
                 presence_penalty: 0,
             })
             // console.log({ ans: response.data.choices[0].text });
-
             res.status(200).send({
                 bot: response.data.choices[0].text
             });
         })
-
-        //sofia end------------
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        //sofia end-----------
 
     }
     catch (error) {
-
     }
     finally {
-
     }
-
 }
-
 run().catch(err => console.error(`this error is from catch section ${err}`.bgRed))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// sofi end -------
 
 
 
 app.get('/', (req, res) => {
-    res.send('GitFair server is up and running');
-})
+    res.send({
+        success: true,
+        data: 'Hello World!',
+    });
+});
 
-// app.listen(port, () => {
-//     console.log(`server is ruuning at port ${port}`.bgCyan)
-// })
 
-// // socket.io server listen -------- 
-// server.listen(5001, () => {
-//     console.log(`socket.io server is runing on  5001`.bgWhite)
-// });
 
 server.listen(port, () => {
-    console.log(`server is ruuning at port ${port}`.bgCyan)
-})
+    console.log(`Server started on port: ${port}`.bgCyan);
+});
