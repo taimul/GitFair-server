@@ -15,6 +15,7 @@ const io = socketio(server);
 
 
 //middle wares
+// app.use(cors());
 app.use(cors({ credentials: true, origin: "http://localhost:3000" }));
 app.use(express.json());
 app.use(cookieParser());
@@ -128,12 +129,13 @@ async function run() {
     try {
 
         // cookie --- 
-        app.get("/cookieCreate/jwt", (req, res) => {
+        app.get("/cookieCreate/jwt", async (req, res) => {
             const email = req.query.email;
+            // console.log(email);
             if (email) {
                 const token = jwt.sign({ email }, process.env.ACCESS_TOKEN);
                 res.status(202).cookie(
-                    accessToken, token, {
+                    "gitFairAccessToken", token, {
                     sameSite: "strict",
                     path: "/",
                     // expires: new Date(new Date().getTime() + 5 * 1000),
@@ -141,11 +143,17 @@ async function run() {
                     secure: true,
                 }
                 ).send("cookie being initialised")
-            } else { res.status.send({ accessToken: "" }) }
+            } else { res.status.send({ "accessToken": "" }) }
         });
-        app.get("/cookieClear", (req, res) => {
-            res.status(202).clearCookie("Name").send("Cookie Cleared")
+        app.get("/cookieClear", async (req, res) => {
+            res.status(202).clearCookie("gitFairAccessToken").send("Cookie Cleared")
         })
+        app.get("/cookieClear/verify", async (req, res) => {
+            const gitFairAccessToken = req?.cookies?.gitFairAccessToken;
+            console.log(gitFairAccessToken);
+            // res.status(202).clearCookie("gitFairAccessToken").send("Cookie Cleared")
+        })
+
 
 
         // MONGODB COLLECTIONS ---- 
