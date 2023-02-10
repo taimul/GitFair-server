@@ -31,6 +31,26 @@ const uri = "mongodb+srv://git-fair-sofi-5:wGIkgVOp2DOT4e2R@cluster0.zwgt8km.mon
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
 
+
+// verifyJWT_HTTP_COOKIE_ONLY function --
+function verifyJWT(req, res, next) {
+    const gitFairAccessToken = req?.cookies?.gitFairAccessToken;
+    if (!gitFairAccessToken) {
+        return res.status(401).send({ success: false, message: "unauthorized access" })
+    };
+    // const token = gitFairAccessToken?.split(" ")[1];
+    // console.log("from verify jwt middle:", gitFairAccessToken);
+    const token = gitFairAccessToken
+    jwt.verify(token, process.env.ACCESS_TOKEN, function (errorr, decoded) {
+        if (errorr) {
+            return res.status(403).send({ success: false, message: "forbidden access" })
+        } else {
+            req.decoded = decoded;
+            next();
+        }
+    })
+}
+
 // STRIPE --- 
 const stripe = require("stripe")(process.env.STRIPT_SECRET);
 
@@ -128,7 +148,7 @@ async function run() {
 
     try {
 
-        // cookie --- 
+        // cookie function start --- 
         app.get("/cookieCreate/jwt", async (req, res) => {
             const email = req.query.email;
             // console.log(email);
@@ -145,14 +165,17 @@ async function run() {
                 ).send("cookie being initialised")
             } else { res.status.send({ "accessToken": "" }) }
         });
+        // call when user log out --- 
         app.get("/cookieClear", async (req, res) => {
             res.status(202).clearCookie("gitFairAccessToken").send("Cookie Cleared")
         })
-        app.get("/cookieClear/verify", async (req, res) => {
-            const gitFairAccessToken = req?.cookies?.gitFairAccessToken;
-            console.log(gitFairAccessToken);
-            // res.status(202).clearCookie("gitFairAccessToken").send("Cookie Cleared")
+        app.get("/cookieClear/verify", verifyJWT, async (req, res) => {
+            // const gitFairAccessToken = req?.cookies?.gitFairAccessToken;
+            // console.log(gitFairAccessToken);
+            // res.status(202).clearCookie("gitFairAccessToken").send("Cookie Cleared");
+            console.log("verify success");
         })
+        // cookie function closed --- 
 
 
 
