@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const http = require('http');
+const cookieParser = require("cookie-parser");
+const jwt = require("jsonwebtoken");
 require("dotenv").config();
 require("colors");
 const port = process.env.PORT || 5000;
@@ -13,8 +15,9 @@ const io = socketio(server);
 
 
 //middle wares
-app.use(cors());
+app.use(cors({ credentials: true, origin: "http://localhost:3000" }));
 app.use(express.json());
+app.use(cookieParser());
 
 
 
@@ -124,6 +127,25 @@ async function run() {
 
     try {
 
+        // cookie --- 
+        app.get("/cookieCreate", (req, res) => {
+            const email = req.query.email;
+            if (email) {
+                const token = jwt.sign({ email }, process.env.ACCESS_TOKEN);
+                res.status(202).cookie(
+                    email, token, {
+                    sameSite: "strict",
+                    path: "/",
+                    // expires: new Date(new Date().getTime() + 5 * 1000),
+                    httpOnly: true,
+                    secure: true,
+                }
+                ).send("cookie being initialised")
+            }
+        });
+        app.get("/cookieClear", (req, res) => {
+            res.status(202).clearCookie("Name").send("Cookie Cleared")
+        })
 
 
         // MONGODB COLLECTIONS ---- 
