@@ -26,6 +26,7 @@ async function run() {
   try {
     const mediaCollection = client.db("Gitfair").collection("files");
     const usersCollection = client.db("Gitfair").collection("users");
+    const indivUsersCollection = client.db("Gitfair").collection("indivUsers");
 
     app.post("/files", async (req, res) => {
       const images = req.body;
@@ -90,6 +91,14 @@ async function run() {
         });
       }
     });
+
+    // post users info 
+    app.post('/users', async (req, res) => {
+      const user = req.body
+      const result = await indivUsersCollection.insertOne(user)
+      res.send(result)
+    });
+
     // CHATGPT_OPENAI function ---
     app.post("/searchai", async (req, res) => {
       const prompt = req.body.prompt;
