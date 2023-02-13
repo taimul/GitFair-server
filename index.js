@@ -99,6 +99,14 @@ async function run() {
       res.send(result)
     });
 
+    // get users info 
+
+    app.get('/users', async (req, res) => {
+      const query = {}
+      const result = await indivUsersCollection.find(query).toArray()
+      res.send(result)
+    })
+
     // CHATGPT_OPENAI function ---
     app.post("/searchai", async (req, res) => {
       const prompt = req.body.prompt;
