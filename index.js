@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion,email } = require("mongodb");
 require("dotenv").config();
 // chat-gpt open AI initialized---
 const { Configuration, OpenAIApi } = require("openai");
@@ -26,19 +26,37 @@ async function run() {
   try {
     const mediaCollection = client.db("Gitfair").collection("files");
     const usersCollection = client.db("Gitfair").collection("users");
+    const indivUsersCollection = client.db("Gitfair").collection("indivUsers");
 
-    app.post("/files", async (req, res) => {
-      const images = req.body;
-      const result = await mediaCollection.insertOne(images[0]);
+    // post users info
+    app.post("/users", async (req, res) => {
+      const user = req.body;
+      const result = await indivUsersCollection.insertOne(user);
       res.send(result);
     });
 
-    //get  all the files
-    app.get("/all-files", async (req, res) => {
+    // get users info
+
+    app.get("/users", async (req, res) => {
       const query = {};
+      const result = await indivUsersCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    //post files on DB
+    app.post("/files", async (req, res) => {
+      const images = req.body;
+      const result = await mediaCollection.insertOne(images);
+      res.send(result);
+    });
+
+    //get  all the files by user email
+    app.get("/all-files/:email", async (req, res) => {
+      const emails= req.params.email;
+      const query = {email:emails}
       const cursor = mediaCollection.find(query);
       const result = await cursor.toArray();
-      res.send(result);
+      res.send(result);  
     });
 
     // stripe payments ---
