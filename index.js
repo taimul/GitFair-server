@@ -27,6 +27,8 @@ async function run() {
     const mediaCollection = client.db("Gitfair").collection("files");
     const usersCollection = client.db("Gitfair").collection("users");
     const indivUsersCollection = client.db("Gitfair").collection("indivUsers");
+    const commentCollection = client.db("Gitfair").collection("comment");
+    const likesCollection = client.db("Gitfair").collection("likes");
 
     // post users info
     app.post("/users", async (req, res) => {
@@ -126,6 +128,62 @@ async function run() {
       }
     });
 
+    // post users info 
+    app.post('/users', async (req, res) => {
+      const user = req.body
+      const result = await indivUsersCollection.insertOne(user)
+      res.send(result)
+    });
+
+    // post a like
+    app.post('/likes', async (req, res) => {
+      const like = req.body
+      const result = await likesCollection.insertOne(like)
+      res.send(result)
+    });
+
+    // post a comment 
+    app.post('/comment', async (req, res) => {
+      const comment = req.body
+      const result = await commentCollection.insertOne(comment)
+      res.send(result)
+    });
+
+    // get users info 
+    app.get('/users', async (req, res) => {
+      const query = {}
+      const result = await indivUsersCollection.find(query).toArray()
+      res.send(result)
+    })
+    // get likes
+    app.get('/likes/:id', async (req, res) => {
+      const id = req.params.id
+      const filter = { id: id }
+      const result = await likesCollection.find(filter).sort({ '_id': -1 }).toArray()
+      res.send(result)
+    })
+
+    // get comments 
+    app.get('/comment', async (req, res) => {
+      const query = {}
+      const result = await commentCollection.find(query).toArray()
+      res.send(result)
+    })
+    // get comment by id 
+    app.get('/comment/:id', async (req, res) => {
+      const id = req.params.id
+      const filter = { id: id }
+      const result = await commentCollection.find(filter).sort({ '_id': -1 }).toArray()
+      res.send(result)
+    })
+
+    // delete a like 
+    app.delete('/likes/:id', async (req, res) => {
+      const id = req.params.id
+      const filter = { id: id }
+      const result = await likesCollection.deleteOne(filter)
+      res.send(result)
+    })
     // CHATGPT_OPENAI function ---
     app.post("/searchai", async (req, res) => {
       const prompt = req.body.prompt;
