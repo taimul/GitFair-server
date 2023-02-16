@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const { MongoClient, ServerApiVersion,email } = require("mongodb");
+const { MongoClient, ServerApiVersion, email } = require("mongodb");
 require("dotenv").config();
 // chat-gpt open AI initialized---
 const { Configuration, OpenAIApi } = require("openai");
@@ -36,7 +36,6 @@ async function run() {
     });
 
     // get users info
-
     app.get("/users", async (req, res) => {
       const query = {};
       const result = await indivUsersCollection.find(query).toArray();
@@ -52,11 +51,11 @@ async function run() {
 
     //get  all the files by user email
     app.get("/all-files/:email", async (req, res) => {
-      const emails= req.params.email;
-      const query = {email:emails}
+      const emails = req.params.email;
+      const query = { email: emails }
       const cursor = mediaCollection.find(query);
       const result = await cursor.toArray();
-      res.send(result);  
+      res.send(result);
     });
 
     // stripe payments ---
@@ -86,6 +85,23 @@ async function run() {
       });
     });
 
+
+    // get API to load premium users data
+    app.get('/premiumuser', async (req, res) => {
+      const query = {};
+      const result = await usersCollection.find(query).toArray();
+      res.send(result);
+    })
+
+    // get API to load the specific premium user data
+    app.get('/premiumuser/:email', async (req, res) => {
+      const email = req.params.email;
+      const query = { email };
+      const user = await usersCollection.findOne(query);
+      res.send(user);
+    })
+
+
     // (chect user is premium or not premium / normal user)  || get premium user from database---
     app.post("/premiumuserfromdb", async (req, res) => {
       const { email } = req.body;
@@ -93,6 +109,7 @@ async function run() {
       const query = {
         email,
       };
+
       // console.log(payConfirmUserDb);
       const result = await usersCollection.findOne(query);
       if (result) {
@@ -108,6 +125,7 @@ async function run() {
         });
       }
     });
+
     // CHATGPT_OPENAI function ---
     app.post("/searchai", async (req, res) => {
       const prompt = req.body.prompt;
@@ -143,5 +161,5 @@ app.get("/", (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`server is ruuning at port ${port}`);
+  console.log(`server is running at port ${port}`);
 });
