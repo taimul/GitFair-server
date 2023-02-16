@@ -94,7 +94,7 @@ async function run() {
     })
 
     // get API to load the specific premium user data
-    app.get('/premiumuser/:email', async (req, res) => {
+    app.get('/profile/:email', async (req, res) => {
       const email = req.params.email;
       const query = { email };
       const user = await usersCollection.findOne(query);
