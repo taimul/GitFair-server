@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const { MongoClient, ServerApiVersion, email } = require("mongodb");
+const { MongoClient, ServerApiVersion,email, ObjectId } = require("mongodb");
 require("dotenv").config();
 // chat-gpt open AI initialized---
 const { Configuration, OpenAIApi } = require("openai");
@@ -37,10 +37,41 @@ async function run() {
       res.send(result);
     });
 
+    app.get('/users/:email', async (req, res) => {
+      const email = req.params.email;
+      const query = { email };
+      const user = await usersCollection.findOne(query);
+      res.send(user);
+    });
+
     // get users info
     app.get("/users", async (req, res) => {
       const query = {};
-      const result = await indivUsersCollection.find(query).toArray();
+      const result = await usersCollection.find(query).toArray();
+      res.send(result);
+    });
+      //  find single user
+    app.get("/users/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      const result = await usersCollection.find(filter).toArray();
+      res.send(result);
+    });
+      //  find single user email
+    app.get("/users/:email", async (req, res) => {
+      const email = req.params.email;
+      const filter = { email:email };
+      const result = await usersCollection.find(filter);
+      res.send(result);
+    });
+    
+
+    // delete user
+
+    app.delete("/user/:id",  async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      const result = await usersCollection.deleteOne(filter);
       res.send(result);
     });
 
