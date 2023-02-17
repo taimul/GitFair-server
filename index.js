@@ -88,23 +88,16 @@ async function run() {
     });
 
 
-    // get API to load premium users data
-    app.get('/premiumuser', async (req, res) => {
-      const query = {};
-      const result = await usersCollection.find(query).toArray();
-      res.send(result);
-    })
-
     // get API to load the specific premium user data
     app.get('/profile/:email', async (req, res) => {
       const email = req.params.email;
       const query = { email };
       const user = await usersCollection.findOne(query);
       res.send(user);
-    })
+    });
 
 
-    // (chect user is premium or not premium / normal user)  || get premium user from database---
+    // (check user is premium or not premium / normal user)  || get premium user from database---
     app.post("/premiumuserfromdb", async (req, res) => {
       const { email } = req.body;
       // console.log("where is email", email) //
