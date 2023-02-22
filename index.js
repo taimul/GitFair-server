@@ -189,10 +189,10 @@ async function run() {
     })
 
     // delete a comment 
-    app.delete('/comment/:id', async (req, res) => {
+    app.delete('/comments/:id', async (req, res) => {
       const id = req.params.id
-      const filter = { id }
-      const result = await likesCollection.deleteOne(filter)
+      const filter = { _id: ObjectId(id) }
+      const result = await commentCollection.deleteOne(filter)
       res.send(result)
     })
     // CHATGPT_OPENAI function ---
