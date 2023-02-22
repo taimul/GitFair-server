@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 require("dotenv").config();
 // chat-gpt open AI initialized---
 const { Configuration, OpenAIApi } = require("openai");
@@ -29,6 +29,43 @@ async function run() {
     const indivUsersCollection = client.db("Gitfair").collection("indivUsers");
     const commentCollection = client.db("Gitfair").collection("comment");
     const likesCollection = client.db("Gitfair").collection("likes");
+    const uploadCollections = client.db('Gitfair').collection('uploadCollections')
+
+    // inputed from jamsheds server 
+    app.post('/upload', async (req, res) => {
+      const upload = req.body
+      const result = await uploadCollections.insertOne(upload)
+      res.send(result)
+    })
+
+    // get blogs
+    app.get('/upload/:email', async (req, res) => {
+      const query = req.params.email
+      const filter = { email: query }
+      const result = await uploadCollections.find(filter).toArray()
+      res.send(result)
+    })
+    app.get('/upload', async (req, res) => {
+      const query = {}
+      const result = await uploadCollections.find(query).sort({ _id: -1 }).toArray()
+      res.send(result)
+    })
+
+    app.get('/uploaded/:id', async (req, res) => {
+      const id = req.params.id
+
+      const filter = { _id: ObjectId(id) }
+
+      const result = await uploadCollections.findOne(filter)
+      res.send(result)
+    })
+
+    app.delete('/uploaded/:id', async (req, res) => {
+      const id = req.params.id
+      const filter = { _id: ObjectId(id) }
+      const result = await uploadCollections.deleteOne(filter)
+      res.send(result)
+    })
 
     app.post("/files", async (req, res) => {
       const images = req.body;
@@ -102,7 +139,7 @@ async function run() {
     });
 
     // post a like
-    app.post('/likes', async (req, res) => {
+    app.post('/like', async (req, res) => {
       const like = req.body
       const result = await likesCollection.insertOne(like)
       res.send(result)
@@ -144,9 +181,17 @@ async function run() {
     })
 
     // delete a like 
-    app.delete('/likes/:id', async (req, res) => {
+    app.delete('/likes/:email', async (req, res) => {
+      const email = req.params.email;
+      const filter = { email }
+      const result = await likesCollection.deleteOne(filter)
+      res.send(result)
+    })
+
+    // delete a comment 
+    app.delete('/comment/:id', async (req, res) => {
       const id = req.params.id
-      const filter = { id: id }
+      const filter = { id }
       const result = await likesCollection.deleteOne(filter)
       res.send(result)
     })
