@@ -106,16 +106,39 @@ async function run() {
       });
     });
 
-    // payment successuser store on DATABASE ---
+    // AFTER payment successuser store on DATABASE ---
     app.post("/premiumuser", async (req, res) => {
       const payConfirmUserDb = req.body;
       // console.log(payConfirmUserDb);
-      const result = await usersCollection.insertOne(payConfirmUserDb);
-      res.status(200).send({
-        success: true,
-        message: `Successfully create the user ${payConfirmUserDb.email}`,
-        data: result,
-      });
+      const result = await indivUsersCollection.updateOne(
+        { email: payConfirmUserDb?.email },
+        {
+          $set: {
+            ...payConfirmUserDb
+          }
+
+        }
+      );
+      if (result) {
+        res.status(200).send({
+          success: true,
+          message: `Successfully Update ${payConfirmUserDb.email}`,
+          data: result,
+        });
+      } else {
+        const result2 = await indivUsersCollection.insertOne(payConfirmUserDb);
+        res.status(200).send({
+          success: true,
+          message: `Successfully create Premium user ${payConfirmUserDb.email}`,
+          data: result2,
+        });
+      }
+
+      // res.status(200).send({
+      //   success: true,
+      //   message: `Successfully create the user ${payConfirmUserDb.email}`,
+      //   data: result,
+      // });
     });
 
 
@@ -131,14 +154,15 @@ async function run() {
     // (check user is premium or not premium / normal user)  || get premium user from database---
     app.post("/premiumuserfromdb", async (req, res) => {
       const { email } = req.body;
-      // console.log("where is email", email) //
+      console.log("where is email", email) //
       const query = {
         email,
       };
 
       // console.log(payConfirmUserDb);
-      const result = await usersCollection.findOne(query);
-      if (result) {
+      const result = await indivUsersCollection.findOne(query);
+      console.log(result);
+      if (result?.premiumUser) {
         res.status(200).send({
           success: true,
           message: `Successfully create the user ${email}`,
