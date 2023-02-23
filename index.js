@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const { MongoClient, ServerApiVersion,email, ObjectId } = require("mongodb");
+const { MongoClient, ServerApiVersion, email, ObjectId } = require("mongodb");
 require("dotenv").config();
 // chat-gpt open AI initialized---
 const { Configuration, OpenAIApi } = require("openai");
@@ -50,25 +50,25 @@ async function run() {
       const result = await usersCollection.find(query).toArray();
       res.send(result);
     });
-      //  find single user
+    //  find single user
     app.get("/users/:id", async (req, res) => {
       const id = req.params.id;
       const filter = { _id: ObjectId(id) };
       const result = await usersCollection.find(filter).toArray();
       res.send(result);
     });
-      //  find single user email
+    //  find single user email
     app.get("/users/:email", async (req, res) => {
       const email = req.params.email;
-      const filter = { email:email };
+      const filter = { email: email };
       const result = await usersCollection.find(filter);
       res.send(result);
     });
-    
+
 
     // delete user
 
-    app.delete("/user/:id",  async (req, res) => {
+    app.delete("/user/:id", async (req, res) => {
       const id = req.params.id;
       const filter = { _id: ObjectId(id) };
       const result = await usersCollection.deleteOne(filter);
@@ -245,3 +245,5 @@ app.get("/", (req, res) => {
 app.listen(port, () => {
   console.log(`server is running at port ${port}`);
 });
+
+// this is comment 
