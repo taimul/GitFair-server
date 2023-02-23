@@ -123,7 +123,7 @@ async function run() {
     app.get('/profile/:email', async (req, res) => {
       const email = req.params.email;
       const query = { email };
-      const user = await usersCollection.findOne(query);
+      const user = await indivUsersCollection.findOne(query);
       res.send(user);
     });
 
