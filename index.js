@@ -160,14 +160,14 @@ async function run() {
     // (check user is premium or not premium / normal user)  || get premium user from database---
     app.post("/premiumuserfromdb", async (req, res) => {
       const { email } = req.body;
-      console.log("where is email", email) //
+      // console.log("where is email", email) //
       const query = {
         email,
       };
 
       // console.log(payConfirmUserDb);
       const result = await indivUsersCollection.findOne(query);
-      console.log(result);
+      // console.log(result);
       if (result?.premiumUser) {
         res.status(200).send({
           success: true,
@@ -183,47 +183,105 @@ async function run() {
     });
 
 
+
     // bkash paymetn start --
-    app.post("/pay-sslcommerz", (req, res) => {
+    app.post("/pay-sslcommerz", async (req, res) => {
       const payConfirmUserDb = req.body;
-      console.log("iiiiiiiii:", payConfirmUserDb);
-      // const data = {
-      //   total_amount: 100,
-      //   currency: 'BDT',
-      //   tran_id: 'REF123', // use unique tran_id for each api call
-      //   success_url: 'http://localhost:3030/success',
-      //   fail_url: 'http://localhost:3030/fail',
-      //   cancel_url: 'http://localhost:3030/cancel',
-      //   ipn_url: 'http://localhost:3030/ipn',
-      //   shipping_method: 'Courier',
-      //   product_name: 'Computer.',
-      //   product_category: 'Electronic',
-      //   product_profile: 'general',
-      //   cus_name: 'Customer Name',
-      //   cus_email: 'customer@example.com',
-      //   cus_add1: 'Dhaka',
-      //   cus_add2: 'Dhaka',
-      //   cus_city: 'Dhaka',
-      //   cus_state: 'Dhaka',
-      //   cus_postcode: '1000',
-      //   cus_country: 'Bangladesh',
-      //   cus_phone: '01711111111',
-      //   cus_fax: '01711111111',
-      //   ship_name: 'Customer Name',
-      //   ship_add1: 'Dhaka',
-      //   ship_add2: 'Dhaka',
-      //   ship_city: 'Dhaka',
-      //   ship_state: 'Dhaka',
-      //   ship_postcode: 1000,
-      //   ship_country: 'Bangladesh',
-      // };
-      // const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live)
-      // sslcz.init(data).then(apiResponse => {
-      //   // Redirect the user to payment gateway
-      //   let GatewayPageURL = apiResponse.GatewayPageURL
-      //   res.redirect(GatewayPageURL)
-      //   console.log('Redirecting to: ', GatewayPageURL)
-      // });
+      if (!payConfirmUserDb) {
+        return res.status(500).send({
+          success: false,
+          message: "Bad Auth, body message not found"
+        })
+      }
+      const transactionId = new ObjectId().toString();
+      const data = {
+        total_amount: payConfirmUserDb.price,
+        currency: 'BDT',
+        tran_id: transactionId, // use unique tran_id for each api call
+
+        success_url: `${process.env.SERVER_URL}/success?transactionId=${transactionId}`,
+        fail_url: `${process.env.SERVER_URL}/failed?transactionId=${transactionId}`,
+        cancel_url: `${process.env.SERVER_URL}/cancel`,
+        ipn_url: `${process.env.SERVER_URL}/ipn`,
+
+        shipping_method: 'Courier',
+        product_name: 'Computer.',
+        product_category: 'Electronic',
+        product_profile: 'general',
+        cus_name: payConfirmUserDb.name,
+        cus_email: payConfirmUserDb.email,
+        cus_add1: 'Dhaka',
+        cus_add2: 'Dhaka',
+        cus_city: 'Dhaka',
+        cus_state: 'Dhaka',
+        cus_postcode: '1000',
+        cus_country: 'Bangladesh',
+        cus_phone: '01711111111',
+        cus_fax: '01711111111',
+        ship_name: 'Customer Name',
+        ship_add1: 'Dhaka',
+        ship_add2: 'Dhaka',
+        ship_city: 'Dhaka',
+        ship_state: 'Dhaka',
+        ship_postcode: 1000,
+        ship_country: 'Bangladesh',
+      };
+      const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live)
+      sslcz.init(data).then(apiResponse => {
+        // Redirect the user to payment gateway
+        let GatewayPageURL = apiResponse.GatewayPageURL
+        res.send({
+          success: true,
+          url: GatewayPageURL,
+        })
+        // console.log('Redirecting to: ', GatewayPageURL)
+      });
+      // await 
+      const fakeData = {
+        name: payConfirmUserDb.name,
+        email: payConfirmUserDb.email,
+        price: payConfirmUserDb.price / 107,
+        userPremiumDuration: payConfirmUserDb.userPremiumDuration,
+        transactionId,
+      }
+      const result = await indivUsersCollection.updateOne(
+        { email: payConfirmUserDb?.email },
+        {
+          $set: {
+            ...fakeData
+          }
+        }
+      );
+      if (!result) {
+        await indivUsersCollection.insertOne(fakeData);
+      }
+    })
+
+    app.post("/success", async (req, res) => {
+      const { transactionId } = req.query;
+      if (!transactionId) {
+        return res.redirect(`${process.env.CLIENT_URL}/failed`)
+      } else {
+        const result = await indivUsersCollection.updateOne(
+          { transactionId },
+          {
+            $set: {
+              premiumUser: true, paymentDate: new Date(),
+            }
+          }
+        )
+        if (result.modifiedCount) {
+          return res.redirect(`${process.env.CLIENT_URL}/dashboard/premiumfeature`)
+        }
+      }
+    })
+    app.post("/failed", async (req, res) => {
+      return res.redirect(`${process.env.CLIENT_URL}/failed`)
+    });
+    app.get("/order/by-transaction-id/:id", async (req, res) => {
+      const { id } = req.params;
+      const order = await indivUsersCollection.findOne({ transactionId: id });
+      res.status(200).send({ success: true, data: order });
     })
     // bkash payment end ---
 
