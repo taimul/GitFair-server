@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const { MongoClient, ServerApiVersion, ObjectId, email } = require("mongodb");
+const { MongoClient, ServerApiVersion, email, ObjectId } = require("mongodb");
 require("dotenv").config();
 // chat-gpt open AI initialized---
 const { Configuration, OpenAIApi } = require("openai");
@@ -21,6 +21,12 @@ const client = new MongoClient(uri, {
 
 // STRIPE ---
 const stripe = require("stripe")(process.env.STRIPT_SECRET);
+//ssl commerz ---
+const SSLCommerzPayment = require('sslcommerz-lts')
+const store_id = process.env.STORE_ID
+const store_passwd = process.env.STORE_PASSWORD
+const is_live = false //true for live, false for sandbox
+
 
 async function run() {
   try {
@@ -74,10 +80,41 @@ async function run() {
       res.send(result);
     });
 
+    app.get('/users/:email', async (req, res) => {
+      const email = req.params.email;
+      const query = { email };
+      const user = await usersCollection.findOne(query);
+      res.send(user);
+    });
+
     // get users info
     app.get("/users", async (req, res) => {
       const query = {};
-      const result = await indivUsersCollection.find(query).toArray();
+      const result = await usersCollection.find(query).toArray();
+      res.send(result);
+    });
+    //  find single user
+    app.get("/users/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      const result = await usersCollection.find(filter).toArray();
+      res.send(result);
+    });
+    //  find single user email
+    app.get("/users/:email", async (req, res) => {
+      const email = req.params.email;
+      const filter = { email: email };
+      const result = await usersCollection.find(filter);
+      res.send(result);
+    });
+
+
+    // delete user
+
+    app.delete("/user/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      const result = await usersCollection.deleteOne(filter);
       res.send(result);
     });
 
@@ -112,36 +149,46 @@ async function run() {
       });
     });
 
-    // payment successuser store on DATABASE ---
+    // AFTER payment successuser store on DATABASE ---
     app.post("/premiumuser", async (req, res) => {
       const payConfirmUserDb = req.body;
       // console.log(payConfirmUserDb);
-      const result = await usersCollection.insertOne(payConfirmUserDb);
-      res.status(200).send({
-        success: true,
-        message: `Successfully create the user ${payConfirmUserDb.email}`,
-        data: result,
-      });
+      const result = await indivUsersCollection.updateOne(
+        { email: payConfirmUserDb?.email },
+        {
+          $set: {
+            ...payConfirmUserDb
+          }
+
+        }
+      );
+      if (result.modifiedCount) {
+        res.status(200).send({
+          success: true,
+          message: `Successfully Update ${payConfirmUserDb.email}`,
+          data: result,
+        });
+      } else {
+        const result2 = await indivUsersCollection.insertOne(payConfirmUserDb);
+        res.status(200).send({
+          success: true,
+          message: `Successfully create Premium user ${payConfirmUserDb.email}`,
+          data: result2,
+        });
+      }
     });
 
-
-    // get API to load premium users data
-    app.get('/premiumuser', async (req, res) => {
-      const query = {};
-      const result = await usersCollection.find(query).toArray();
-      res.send(result);
-    })
 
     // get API to load the specific premium user data
     app.get('/profile/:email', async (req, res) => {
       const email = req.params.email;
       const query = { email };
-      const user = await usersCollection.findOne(query);
+      const user = await indivUsersCollection.findOne(query);
       res.send(user);
-    })
+    });
 
 
-    // (chect user is premium or not premium / normal user)  || get premium user from database---
+    // (check user is premium or not premium / normal user)  || get premium user from database---
     app.post("/premiumuserfromdb", async (req, res) => {
       const { email } = req.body;
       // console.log("where is email", email) //
@@ -150,8 +197,9 @@ async function run() {
       };
 
       // console.log(payConfirmUserDb);
-      const result = await usersCollection.findOne(query);
-      if (result) {
+      const result = await indivUsersCollection.findOne(query);
+      // console.log(result);
+      if (result?.premiumUser) {
         res.status(200).send({
           success: true,
           message: `Successfully create the user ${email}`,
@@ -164,6 +212,117 @@ async function run() {
         });
       }
     });
+
+
+
+    // bkash paymetn start --
+    app.post("/pay-sslcommerz", async (req, res) => {
+      const payConfirmUserDb = req.body;
+      if (!payConfirmUserDb) {
+        return res.status(500).send({
+          success: false,
+          message: "Bad Auth, body message not found"
+        })
+      }
+      const transactionId = new ObjectId().toString();
+      const data = {
+        total_amount: payConfirmUserDb.price,
+        currency: 'BDT',
+        tran_id: transactionId, // use unique tran_id for each api call
+
+        success_url: `${process.env.SERVER_URL}/success?transactionId=${transactionId}`,
+        fail_url: `${process.env.SERVER_URL}/failed?transactionId=${transactionId}`,
+        cancel_url: `${process.env.SERVER_URL}/failed?transactionId=${transactionId}`,
+        ipn_url: `${process.env.SERVER_URL}/ipn`,
+
+        shipping_method: 'Courier',
+        product_name: 'Computer.',
+        product_category: 'Electronic',
+        product_profile: 'general',
+        cus_name: payConfirmUserDb.name,
+        cus_email: payConfirmUserDb.email,
+        cus_add1: 'Dhaka',
+        cus_add2: 'Dhaka',
+        cus_city: 'Dhaka',
+        cus_state: 'Dhaka',
+        cus_postcode: '1000',
+        cus_country: 'Bangladesh',
+        cus_phone: '01711111111',
+        cus_fax: '01711111111',
+        ship_name: 'Customer Name',
+        ship_add1: 'Dhaka',
+        ship_add2: 'Dhaka',
+        ship_city: 'Dhaka',
+        ship_state: 'Dhaka',
+        ship_postcode: 1000,
+        ship_country: 'Bangladesh',
+      };
+      const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live)
+      sslcz.init(data).then(apiResponse => {
+        // Redirect the user to payment gateway
+        let GatewayPageURL = apiResponse.GatewayPageURL
+        res.send({
+          success: true,
+          url: GatewayPageURL,
+        })
+        // console.log('Redirecting to: ', GatewayPageURL)
+      });
+
+      // await 
+      const fakeData = {
+        name: payConfirmUserDb.name,
+        email: payConfirmUserDb.email,
+        price: payConfirmUserDb.price / 107,
+        userPremiumDuration: payConfirmUserDb.userPremiumDuration,
+        transactionId,
+      }
+      const result = await indivUsersCollection.updateOne(
+        { email: payConfirmUserDb.email },
+        {
+          $set: {
+            ...fakeData
+          }
+        }
+      );
+      if (!result.modifiedCount) {
+        await indivUsersCollection.insertOne(fakeData);
+      }
+    })
+
+    app.post("/success", async (req, res) => {
+      const { transactionId } = req.query;
+      if (!transactionId) {
+        return res.redirect(`${process.env.CLIENT_URL}/failed`)
+      } else {
+        const result = await indivUsersCollection.updateOne(
+          { transactionId },
+          {
+            $set: {
+              premiumUser: true, paymentDate: new Date(),
+            }
+          }
+        )
+        if (result.modifiedCount) {
+          res.redirect(`${process.env.CLIENT_URL}/dashboard/premiumfeature`)
+        }
+      }
+    })
+    app.post("/failed", async (req, res) => {
+      return res.redirect(`${process.env.CLIENT_URL}/failed`)
+    });
+    app.get("/order/by-transaction-id/:id", async (req, res) => {
+      const { id } = req.params;
+      const order = await indivUsersCollection.findOne({ transactionId: id });
+      res.status(200).send({ success: true, data: order });
+    })
+    // bkash payment end ---
+
+
+
+
+
+
+
 
     // post users info 
     app.post('/users', async (req, res) => {
@@ -266,3 +425,5 @@ app.get("/", (req, res) => {
 app.listen(port, () => {
   console.log(`server is running at port ${port}`);
 });
+
+// this is comment 
