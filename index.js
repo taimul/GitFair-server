@@ -29,7 +29,7 @@ async function run() {
     const indivUsersCollection = client.db("Gitfair").collection("indivUsers");
     const commentCollection = client.db("Gitfair").collection("comment");
     const likesCollection = client.db("Gitfair").collection("likes");
-    const uploadCollections = client.db('Gitfair').collection('uploadCollections')
+    const uploadCollections = client.db("Gitfair").collection("uploadCollections")
 
     // inputed from jamsheds server 
     app.post('/upload', async (req, res) => {
@@ -51,11 +51,9 @@ async function run() {
       res.send(result)
     })
 
-    app.get('/uploaded/:id', async (req, res) => {
+    app.get('/uploadedData/:id', async (req, res) => {
       const id = req.params.id
-
       const filter = { _id: ObjectId(id) }
-
       const result = await uploadCollections.findOne(filter)
       res.send(result)
     })
