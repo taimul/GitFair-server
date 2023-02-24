@@ -25,8 +25,8 @@ const stripe = require("stripe")(process.env.STRIPT_SECRET);
 async function run() {
   try {
     const mediaCollection = client.db("Gitfair").collection("files");
-    const usersCollection = client.db("Gitfair").collection("users");
-    const indivUsersCollection = client.db("Gitfair").collection("indivUsers");
+    // const indivUsersCollection = client.db("Gitfair").collection("users");
+    const indivindivUsersCollection = client.db("Gitfair").collection("indivUsers");
     const commentCollection = client.db("Gitfair").collection("comment");
     const likesCollection = client.db("Gitfair").collection("likes");
     const uploadCollections = client.db("Gitfair").collection("uploadCollections")
@@ -98,7 +98,7 @@ async function run() {
     app.post("/premiumuser", async (req, res) => {
       const payConfirmUserDb = req.body;
       // console.log(payConfirmUserDb);
-      const result = await usersCollection.insertOne(payConfirmUserDb);
+      const result = await indivUsersCollection.insertOne(payConfirmUserDb);
       res.status(200).send({
         success: true,
         message: `Successfully create the user ${payConfirmUserDb.email}`,
@@ -114,7 +114,7 @@ async function run() {
         email,
       };
       // console.log(payConfirmUserDb);
-      const result = await usersCollection.findOne(query);
+      const result = await indivUsersCollection.findOne(query);
       if (result) {
         res.status(200).send({
           success: true,
@@ -132,7 +132,7 @@ async function run() {
     // post users info 
     app.post('/users', async (req, res) => {
       const user = req.body
-      const result = await indivUsersCollection.insertOne(user)
+      const result = await indivindivUsersCollection.insertOne(user)
       res.send(result)
     });
 
@@ -153,7 +153,7 @@ async function run() {
     // get users info 
     app.get('/users', async (req, res) => {
       const query = {}
-      const result = await indivUsersCollection.find(query).toArray()
+      const result = await indivindivUsersCollection.find(query).toArray()
       res.send(result)
     })
     // get likes
