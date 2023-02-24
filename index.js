@@ -1,10 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-<<<<<<< HEAD
-const { MongoClient, ServerApiVersion, email } = require("mongodb");
-=======
-const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
->>>>>>> f7323e96bd4ca23d798195416ab82b582f25ce62
+const { MongoClient, ServerApiVersion, ObjectId, email } = require("mongodb");
 require("dotenv").config();
 // chat-gpt open AI initialized---
 const { Configuration, OpenAIApi } = require("openai");
