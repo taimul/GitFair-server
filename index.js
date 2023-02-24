@@ -25,7 +25,7 @@ const stripe = require("stripe")(process.env.STRIPT_SECRET);
 async function run() {
   try {
     const mediaCollection = client.db("Gitfair").collection("files");
-    const usersCollection = client.db("Gitfair").collection("users");
+    // const usersCollection = client.db("Gitfair").collection("users");
     const indivUsersCollection = client.db("Gitfair").collection("indivUsers");
 
     // post users info
@@ -38,7 +38,7 @@ async function run() {
     app.get('/users/:email', async (req, res) => {
       const email = req.params.email;
       const query = { email };
-      const user = await usersCollection.findOne(query);
+      const user = await indivUsersCollection.findOne(query);
       res.send(user);
     });
 
@@ -46,21 +46,21 @@ async function run() {
 
     app.get("/users", async (req, res) => {
       const query = {};
-      const result = await usersCollection.find(query).toArray();
+      const result = await indivUsersCollection.find(query).toArray();
       res.send(result);
     });
       //  find single user
     app.get("/users/:id", async (req, res) => {
       const id = req.params.id;
       const filter = { _id: ObjectId(id) };
-      const result = await usersCollection.find(filter).toArray();
+      const result = await indivUsersCollection.find(filter).toArray();
       res.send(result);
     });
       //  find single user email
     app.get("/users/:email", async (req, res) => {
       const email = req.params.email;
       const filter = { email:email };
-      const result = await usersCollection.find(filter);
+      const result = await indivUsersCollection.find(filter);
       res.send(result);
     });
     
@@ -70,7 +70,7 @@ async function run() {
     app.delete("/user/:id",  async (req, res) => {
       const id = req.params.id;
       const filter = { _id: ObjectId(id) };
-      const result = await usersCollection.deleteOne(filter);
+      const result = await indivUsersCollection.deleteOne(filter);
       res.send(result);
     });
 
