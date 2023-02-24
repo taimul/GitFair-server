@@ -201,7 +201,7 @@ async function run() {
 
         success_url: `${process.env.SERVER_URL}/success?transactionId=${transactionId}`,
         fail_url: `${process.env.SERVER_URL}/failed?transactionId=${transactionId}`,
-        cancel_url: `${process.env.SERVER_URL}/cancel`,
+        cancel_url: `${process.env.SERVER_URL}/failed?transactionId=${transactionId}`,
         ipn_url: `${process.env.SERVER_URL}/ipn`,
 
         shipping_method: 'Courier',
@@ -236,6 +236,7 @@ async function run() {
         })
         // console.log('Redirecting to: ', GatewayPageURL)
       });
+
       // await 
       const fakeData = {
         name: payConfirmUserDb.name,
@@ -245,14 +246,14 @@ async function run() {
         transactionId,
       }
       const result = await indivUsersCollection.updateOne(
-        { email: payConfirmUserDb?.email },
+        { email: payConfirmUserDb.email },
         {
           $set: {
             ...fakeData
           }
         }
       );
-      if (!result) {
+      if (!result.modifiedCount) {
         await indivUsersCollection.insertOne(fakeData);
       }
     })
@@ -271,7 +272,7 @@ async function run() {
           }
         )
         if (result.modifiedCount) {
-          return res.redirect(`${process.env.CLIENT_URL}/dashboard/premiumfeature`)
+          res.redirect(`${process.env.CLIENT_URL}/dashboard/premiumfeature`)
         }
       }
     })
