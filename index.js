@@ -125,7 +125,7 @@ async function run() {
 
         }
       );
-      if (result) {
+      if (result.modifiedCount) {
         res.status(200).send({
           success: true,
           message: `Successfully Update ${payConfirmUserDb.email}`,
